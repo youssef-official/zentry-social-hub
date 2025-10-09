@@ -23,6 +23,7 @@ const App = () => (
           <Route path="/" element={<Home />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/profile/:username" element={<Profile />} />
           <Route path="/reels" element={<Reels />} />
           <Route path="/friends" element={<Friends />} />
           <Route path="/messages" element={<Messages />} />

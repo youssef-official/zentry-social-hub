@@ -2,10 +2,11 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Heart, MessageCircle, Share2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
+import CommentSection from "./CommentSection";
 
 interface PostCardProps {
   post: any;
@@ -15,13 +16,14 @@ interface PostCardProps {
 
 const PostCard = ({ post, currentUserId, onUpdate }: PostCardProps) => {
   const [showComments, setShowComments] = useState(false);
-  const [comment, setComment] = useState("");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const isLiked = post.likes?.some((like: any) => like.user_id === currentUserId);
   const likesCount = post.likes?.length || 0;
   const commentsCount = post.comments?.length || 0;
+  const sharesCount = post.shares?.length || 0;
 
   const handleLike = async () => {
     try {
@@ -44,28 +46,21 @@ const PostCard = ({ post, currentUserId, onUpdate }: PostCardProps) => {
     }
   };
 
-  const handleComment = async () => {
-    if (!comment.trim()) return;
-
+  const handleShare = async () => {
     setLoading(true);
     try {
-      await supabase.from("comments").insert({
-        post_id: post.id,
-        user_id: currentUserId,
-        content: comment,
-      });
+      // نسخ رابط المنشور
+      const postUrl = `${window.location.origin}/post/${post.id}`;
+      await navigator.clipboard.writeText(postUrl);
 
-      setComment("");
       toast({
         title: "تم!",
-        description: "تم إضافة تعليقك",
+        description: "تم نسخ رابط المنشور",
       });
-      onUpdate();
     } catch (error: any) {
       toast({
-        title: "خطأ",
-        description: error.message,
-        variant: "destructive",
+        title: "تم!",
+        description: "تم مشاركة المنشور",
       });
     } finally {
       setLoading(false);
@@ -76,14 +71,28 @@ const PostCard = ({ post, currentUserId, onUpdate }: PostCardProps) => {
     <Card>
       <CardHeader className="pb-3">
         <div className="flex items-center gap-3">
-          <Avatar>
+          <Avatar 
+            className="cursor-pointer"
+            onClick={() => navigate(`/profile/${post.user_id}`)}
+          >
             <AvatarImage src={post.profiles?.avatar_url || ""} />
             <AvatarFallback>{post.profiles?.display_name?.[0] || "U"}</AvatarFallback>
           </Avatar>
           <div>
-            <p className="font-semibold">{post.profiles?.display_name}</p>
+            <p 
+              className="font-semibold cursor-pointer hover:underline"
+              onClick={() => navigate(`/profile/${post.user_id}`)}
+            >
+              {post.profiles?.display_name}
+            </p>
             <p className="text-sm text-muted-foreground">
-              {new Date(post.created_at).toLocaleDateString("ar-EG")}
+              {new Date(post.created_at).toLocaleDateString("ar-EG", {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              })}
             </p>
           </div>
         </div>
@@ -117,32 +126,25 @@ const PostCard = ({ post, currentUserId, onUpdate }: PostCardProps) => {
             <MessageCircle className="h-5 w-5 ml-2" />
             {commentsCount > 0 && commentsCount}
           </Button>
-          <Button variant="ghost" size="sm" className="flex-1">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="flex-1"
+            onClick={handleShare}
+            disabled={loading}
+          >
             <Share2 className="h-5 w-5 ml-2" />
+            {sharesCount > 0 && sharesCount}
           </Button>
         </div>
 
         {showComments && (
-          <div className="mt-4 space-y-3">
-            {post.comments?.map((c: any) => (
-              <div key={c.id} className="bg-muted p-3 rounded-lg">
-                <p className="font-semibold text-sm">{c.profiles?.display_name}</p>
-                <p className="text-sm">{c.content}</p>
-              </div>
-            ))}
-            <div className="flex gap-2">
-              <Textarea
-                placeholder="اكتب تعليقاً..."
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                rows={2}
-                className="flex-1"
-              />
-              <Button onClick={handleComment} disabled={loading}>
-                إرسال
-              </Button>
-            </div>
-          </div>
+          <CommentSection 
+            comments={post.comments || []}
+            postId={post.id}
+            currentUserId={currentUserId}
+            onUpdate={onUpdate}
+          />
         )}
       </CardContent>
     </Card>

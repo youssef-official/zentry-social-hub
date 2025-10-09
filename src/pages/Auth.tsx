@@ -12,32 +12,60 @@ const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
+  const [username, setUsername] = useState("");
+  const [birthDate, setBirthDate] = useState("");
+  const [college, setCollege] = useState("");
+  const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
+  const [step, setStep] = useState(1);
   const { toast } = useToast();
   const navigate = useNavigate();
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // التحقق من العمر (18+)
+    const birthYear = new Date(birthDate).getFullYear();
+    const currentYear = new Date().getFullYear();
+    const age = currentYear - birthYear;
+    
+    if (age < 18) {
+      toast({
+        title: "خطأ",
+        description: "يجب أن يكون عمرك 18 سنة أو أكثر للتسجيل",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`,
-          data: {
-            display_name: displayName,
-          },
-        },
       });
 
-      if (error) throw error;
+      if (authError) throw authError;
+
+      if (authData.user) {
+        const { error: profileError } = await supabase
+          .from("profiles")
+          .insert({
+            user_id: authData.user.id,
+            display_name: displayName,
+            birth_date: birthDate,
+          });
+
+        if (profileError) throw profileError;
+      }
 
       toast({
         title: "تم التسجيل بنجاح!",
-        description: "يرجى تفقد بريدك الإلكتروني لتفعيل حسابك.",
+        description: "يمكنك الآن تسجيل الدخول",
       });
+      
+      setStep(1);
     } catch (error: any) {
       toast({
         title: "خطأ في التسجيل",
@@ -120,7 +148,7 @@ const Auth = () => {
             <TabsContent value="signup">
               <form onSubmit={handleSignUp} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="signup-name">الاسم الكامل</Label>
+                  <Label htmlFor="signup-name">الاسم الكامل *</Label>
                   <Input
                     id="signup-name"
                     type="text"
@@ -131,7 +159,17 @@ const Auth = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="signup-email">البريد الإلكتروني</Label>
+                  <Label htmlFor="signup-birthdate">تاريخ الميلاد * (18+)</Label>
+                  <Input
+                    id="signup-birthdate"
+                    type="date"
+                    value={birthDate}
+                    onChange={(e) => setBirthDate(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signup-email">البريد الإلكتروني *</Label>
                   <Input
                     id="signup-email"
                     type="email"
@@ -142,7 +180,7 @@ const Auth = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="signup-password">كلمة المرور</Label>
+                  <Label htmlFor="signup-password">كلمة المرور *</Label>
                   <Input
                     id="signup-password"
                     type="password"
@@ -150,6 +188,7 @@ const Auth = () => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
+                    minLength={6}
                   />
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>

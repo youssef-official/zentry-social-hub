@@ -19,7 +19,8 @@ interface Post {
     avatar_url: string | null;
   };
   likes: { id: string; user_id: string }[];
-  comments: { id: string; content: string; user_id: string; profiles: { display_name: string } }[];
+  comments: any[];
+  shares?: { id: string; user_id: string }[];
 }
 
 const Home = () => {
@@ -74,19 +75,21 @@ const Home = () => {
             const { data: commentsData } = await supabase
               .from("comments")
               .select("*")
-              .eq("post_id", post.id);
+              .eq("post_id", post.id)
+              .order("created_at", { ascending: true });
 
             const commentsWithProfiles = await Promise.all(
               (commentsData || []).map(async (comment) => {
                 const { data: commentProfile } = await supabase
                   .from("profiles")
-                  .select("display_name")
+                  .select("display_name, avatar_url")
                   .eq("user_id", comment.user_id)
                   .single();
 
                 return {
                   ...comment,
-                  profiles: commentProfile || { display_name: "مستخدم" },
+                  profiles: commentProfile || { display_name: "مستخدم", avatar_url: null },
+                  replies: [],
                 };
               })
             );
@@ -96,6 +99,7 @@ const Home = () => {
               profiles: profileData || { display_name: "مستخدم", avatar_url: null },
               likes: likesData || [],
               comments: commentsWithProfiles,
+              shares: [],
             };
           })
         );
@@ -133,7 +137,11 @@ const Home = () => {
       <TopNav />
       
       <main className="max-w-2xl mx-auto p-4">
-        <CreatePost onPostCreated={fetchPosts} userId={user?.id || ""} />
+        <CreatePost 
+          onPostCreated={fetchPosts} 
+          userId={user?.id || ""} 
+          userProfile={posts[0]?.profiles}
+        />
         
         <div className="space-y-4 mt-6">
           {posts.map((post) => (

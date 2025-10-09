@@ -32,13 +32,23 @@ const Reels = () => {
       <TopNav />
       
       <main className="max-w-md mx-auto h-[calc(100vh-140px)] flex items-center justify-center p-4">
-        <Card className="w-full">
-          <CardContent className="p-8 text-center">
-            <Film className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-            <h2 className="text-xl font-bold mb-2">الريلز</h2>
-            <p className="text-muted-foreground">
-              قريباً... سيتم إضافة الفيديوهات القصيرة هنا
+        <Card className="w-full border-dashed">
+          <CardContent className="p-12 text-center">
+            <div className="bg-muted/50 rounded-full h-24 w-24 mx-auto mb-6 flex items-center justify-center">
+              <Film className="h-12 w-12 text-muted-foreground" />
+            </div>
+            <h2 className="text-2xl font-bold mb-3">لا توجد ريلز بعد</h2>
+            <p className="text-muted-foreground mb-6">
+              كن أول من ينشر فيديو قصير! شارك لحظاتك المميزة مع أصدقائك
             </p>
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">قريباً سيتم إضافة:</p>
+              <ul className="text-sm text-muted-foreground space-y-1">
+                <li>📹 رفع الفيديوهات القصيرة</li>
+                <li>🎵 إضافة الموسيقى والمؤثرات</li>
+                <li>✨ فلاتر وتأثيرات مميزة</li>
+              </ul>
+            </div>
           </CardContent>
         </Card>
       </main>

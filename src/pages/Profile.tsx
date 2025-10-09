@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import TopNav from "@/components/Layout/TopNav";
 import BottomNav from "@/components/Layout/BottomNav";
@@ -12,12 +12,14 @@ import { Camera, Edit } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const Profile = () => {
+  const { username } = useParams();
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [displayName, setDisplayName] = useState("");
   const [bio, setBio] = useState("");
+  const [isOwnProfile, setIsOwnProfile] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -27,10 +29,15 @@ const Profile = () => {
         navigate("/auth");
       } else {
         setUser(session.user);
-        fetchProfile(session.user.id);
+        if (username) {
+          fetchProfileByUsername(username, session.user.id);
+        } else {
+          setIsOwnProfile(true);
+          fetchProfile(session.user.id);
+        }
       }
     });
-  }, [navigate]);
+  }, [navigate, username]);
 
   const fetchProfile = async (userId: string) => {
     try {
@@ -50,6 +57,37 @@ const Profile = () => {
       setLoading(false);
     } catch (error: any) {
       console.error(error);
+      setLoading(false);
+    }
+  };
+
+  const fetchProfileByUsername = async (username: string, currentUserId: string) => {
+    try {
+      let { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("user_id", username)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      if (data) {
+        setProfile(data);
+        setDisplayName(data.display_name);
+        setBio(data.bio || "");
+        setIsOwnProfile(data.user_id === currentUserId);
+      } else {
+        throw new Error("لم يتم العثور على المستخدم");
+      }
+      setLoading(false);
+    } catch (error: any) {
+      console.error(error);
+      toast({
+        title: "خطأ",
+        description: "لم يتم العثور على هذا المستخدم",
+        variant: "destructive",
+      });
+      navigate("/");
       setLoading(false);
     }
   };
@@ -115,7 +153,21 @@ const Profile = () => {
             </Avatar>
 
             <div className="mt-4">
-              {editing ? (
+              <div className="mb-4 space-y-1">
+                {profile?.birth_date && (
+                  <p className="text-sm text-muted-foreground">
+                    تاريخ الميلاد: {new Date(profile.birth_date).toLocaleDateString("ar-EG")}
+                  </p>
+                )}
+                {profile?.college && (
+                  <p className="text-sm text-muted-foreground">🎓 {profile.college}</p>
+                )}
+                {profile?.phone && (
+                  <p className="text-sm text-muted-foreground">📱 {profile.phone}</p>
+                )}
+              </div>
+
+              {editing && isOwnProfile ? (
                 <div className="space-y-4 max-w-md">
                   <Input
                     value={displayName}
@@ -141,10 +193,12 @@ const Profile = () => {
                     <h1 className="text-2xl font-bold">
                       {profile?.display_name || "مستخدم جديد"}
                     </h1>
-                    <Button size="sm" onClick={() => setEditing(true)}>
-                      <Edit className="h-4 w-4 ml-2" />
-                      تعديل
-                    </Button>
+                    {isOwnProfile && (
+                      <Button size="sm" onClick={() => setEditing(true)}>
+                        <Edit className="h-4 w-4 ml-2" />
+                        تعديل
+                      </Button>
+                    )}
                   </div>
                   <p className="text-muted-foreground">{profile?.bio || "لم يتم إضافة نبذة بعد"}</p>
                 </>

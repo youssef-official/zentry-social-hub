@@ -4,17 +4,21 @@ import { supabase } from "@/integrations/supabase/client";
 import TopNav from "@/components/Layout/TopNav";
 import BottomNav from "@/components/Layout/BottomNav";
 import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Camera, Edit } from "lucide-react";
+import { Edit } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import AvatarUpload from "@/components/Profile/AvatarUpload";
+import CoverUpload from "@/components/Profile/CoverUpload";
+import PostCard from "@/components/Feed/PostCard";
+import CreatePost from "@/components/Feed/CreatePost";
 
 const Profile = () => {
   const { username } = useParams();
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
+  const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [displayName, setDisplayName] = useState("");
@@ -54,10 +58,35 @@ const Profile = () => {
         setDisplayName(data.display_name);
         setBio(data.bio || "");
       }
+      
+      await fetchUserPosts(userId);
       setLoading(false);
     } catch (error: any) {
       console.error(error);
       setLoading(false);
+    }
+  };
+
+  const fetchUserPosts = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("posts")
+        .select(`
+          *,
+          profiles:user_id (display_name, avatar_url),
+          likes (*),
+          comments (
+            *,
+            profiles:user_id (display_name, avatar_url)
+          )
+        `)
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setPosts(data || []);
+    } catch (error: any) {
+      console.error(error);
     }
   };
 
@@ -124,6 +153,52 @@ const Profile = () => {
     }
   };
 
+  const handleAvatarUpload = async (url: string) => {
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ avatar_url: url })
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+
+      setProfile({ ...profile, avatar_url: url });
+      toast({
+        title: "تم!",
+        description: "تم تحديث صورة الملف الشخصي",
+      });
+    } catch (error: any) {
+      toast({
+        title: "خطأ",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCoverUpload = async (url: string) => {
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ cover_url: url })
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+
+      setProfile({ ...profile, cover_url: url });
+      toast({
+        title: "تم!",
+        description: "تم تحديث صورة الغلاف",
+      });
+    } catch (error: any) {
+      toast({
+        title: "خطأ",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -136,37 +211,47 @@ const Profile = () => {
     <div className="min-h-screen bg-muted pb-20">
       <TopNav />
       
-      <main className="max-w-4xl mx-auto p-4">
+      <main className="max-w-4xl mx-auto p-4 space-y-4">
         <Card>
-          <div className="h-48 bg-gradient-to-r from-primary to-primary/80 relative">
-            <Button size="icon" variant="secondary" className="absolute bottom-4 right-4">
-              <Camera className="h-4 w-4" />
-            </Button>
-          </div>
+          {isOwnProfile ? (
+            <CoverUpload 
+              currentUrl={profile?.cover_url}
+              onUpload={handleCoverUpload}
+            />
+          ) : (
+            <div className="h-48 bg-gradient-to-r from-primary to-primary/80 overflow-hidden">
+              {profile?.cover_url && (
+                <img 
+                  src={profile.cover_url} 
+                  alt="Cover" 
+                  className="w-full h-full object-cover"
+                />
+              )}
+            </div>
+          )}
           
           <CardContent className="relative">
-            <Avatar className="h-32 w-32 -mt-16 border-4 border-background">
-              <AvatarImage src={profile?.avatar_url || ""} />
-              <AvatarFallback className="text-3xl">
-                {displayName?.[0] || user?.email?.[0]?.toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
+            <div className="-mt-16 mb-4">
+              {isOwnProfile ? (
+                <AvatarUpload
+                  currentUrl={profile?.avatar_url}
+                  onUpload={handleAvatarUpload}
+                  fallback={displayName?.[0] || user?.email?.[0]?.toUpperCase() || "U"}
+                />
+              ) : (
+                <div className="h-32 w-32 border-4 border-background rounded-full overflow-hidden bg-primary">
+                  {profile?.avatar_url ? (
+                    <img src={profile.avatar_url} alt={displayName} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-3xl text-primary-foreground">
+                      {displayName?.[0] || "U"}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
 
             <div className="mt-4">
-              <div className="mb-4 space-y-1">
-                {profile?.birth_date && (
-                  <p className="text-sm text-muted-foreground">
-                    تاريخ الميلاد: {new Date(profile.birth_date).toLocaleDateString("ar-EG")}
-                  </p>
-                )}
-                {profile?.college && (
-                  <p className="text-sm text-muted-foreground">🎓 {profile.college}</p>
-                )}
-                {profile?.phone && (
-                  <p className="text-sm text-muted-foreground">📱 {profile.phone}</p>
-                )}
-              </div>
-
               {editing && isOwnProfile ? (
                 <div className="space-y-4 max-w-md">
                   <Input
@@ -200,12 +285,38 @@ const Profile = () => {
                       </Button>
                     )}
                   </div>
-                  <p className="text-muted-foreground">{profile?.bio || "لم يتم إضافة نبذة بعد"}</p>
+                  <p className="text-muted-foreground mb-4">{profile?.bio || "لم يتم إضافة نبذة بعد"}</p>
                 </>
               )}
             </div>
           </CardContent>
         </Card>
+
+        {isOwnProfile && (
+          <CreatePost 
+            onPostCreated={() => fetchUserPosts(user.id)} 
+            userId={user.id}
+            userProfile={profile}
+          />
+        )}
+
+        <div className="space-y-4">
+          <h2 className="text-xl font-bold px-2">المنشورات</h2>
+          {posts.length === 0 ? (
+            <Card className="p-8 text-center">
+              <p className="text-muted-foreground">لا توجد منشورات بعد</p>
+            </Card>
+          ) : (
+            posts.map((post) => (
+              <PostCard
+                key={post.id}
+                post={post}
+                currentUserId={user?.id}
+                onUpdate={() => fetchUserPosts(profile.user_id)}
+              />
+            ))
+          )}
+        </div>
       </main>
 
       <BottomNav />

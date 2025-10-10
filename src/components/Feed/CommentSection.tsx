@@ -11,6 +11,7 @@ interface Comment {
   id: string;
   content: string;
   user_id: string;
+  created_at?: string;
   profiles: {
     display_name: string;
     avatar_url: string | null;
@@ -102,53 +103,68 @@ const CommentSection = ({ comments, postId, currentUserId, onUpdate }: CommentSe
   };
 
   return (
-    <div className="mt-4 space-y-3">
+    <div className="space-y-3 pt-3">
       {comments.map((comment) => (
         <div key={comment.id} className="space-y-2">
-          <div className="bg-muted/50 p-3 rounded-lg">
-            <div className="flex items-start gap-2">
-              <Avatar className="h-8 w-8">
-                <AvatarImage src={comment.profiles?.avatar_url || ""} />
-                <AvatarFallback>{comment.profiles?.display_name?.[0]}</AvatarFallback>
-              </Avatar>
-              <div className="flex-1">
+          <div className="flex gap-2 items-start">
+            <Avatar 
+              className="h-8 w-8 cursor-pointer"
+              onClick={() => navigate(`/profile/${comment.user_id}`)}
+            >
+              <AvatarImage src={comment.profiles?.avatar_url || ""} />
+              <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                {comment.profiles?.display_name?.[0] || "U"}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1">
+              <div className="bg-muted rounded-2xl px-3 py-2">
                 <p 
                   className="font-semibold text-sm cursor-pointer hover:underline"
                   onClick={() => navigate(`/profile/${comment.user_id}`)}
                 >
                   {comment.profiles?.display_name}
                 </p>
-                <p className="text-sm mt-1">{comment.content}</p>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="mt-1 h-auto p-0 text-xs"
+                <p className="text-sm leading-relaxed">{comment.content}</p>
+              </div>
+              <div className="flex gap-3 px-3 mt-1">
+                <button className="text-xs text-muted-foreground hover:underline font-semibold">
+                  إعجاب
+                </button>
+                <button 
+                  className="text-xs text-muted-foreground hover:underline font-semibold"
                   onClick={() => setReplyTo(replyTo === comment.id ? null : comment.id)}
                 >
-                  <MessageCircle className="h-3 w-3 ml-1" />
                   رد
-                </Button>
+                </button>
+                <span className="text-xs text-muted-foreground">
+                  {new Date(comment.created_at).toLocaleDateString("ar-EG")}
+                </span>
               </div>
             </div>
           </div>
 
           {comment.replies && comment.replies.length > 0 && (
-            <div className="mr-8 space-y-2">
-              {comment.replies.map((reply) => (
-                <div key={reply.id} className="bg-muted/30 p-2 rounded-lg">
-                  <div className="flex items-start gap-2">
-                    <Avatar className="h-6 w-6">
-                      <AvatarImage src={reply.profiles?.avatar_url || ""} />
-                      <AvatarFallback>{reply.profiles?.display_name?.[0]}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
+            <div className="mr-10 space-y-2">
+              {comment.replies.map((reply: Reply) => (
+                <div key={reply.id} className="flex gap-2 items-start">
+                  <Avatar 
+                    className="h-7 w-7 cursor-pointer"
+                    onClick={() => navigate(`/profile/${reply.user_id}`)}
+                  >
+                    <AvatarImage src={reply.profiles?.avatar_url || ""} />
+                    <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                      {reply.profiles?.display_name?.[0] || "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1">
+                    <div className="bg-muted rounded-2xl px-3 py-2">
                       <p 
                         className="font-semibold text-xs cursor-pointer hover:underline"
                         onClick={() => navigate(`/profile/${reply.user_id}`)}
                       >
                         {reply.profiles?.display_name}
                       </p>
-                      <p className="text-xs mt-1">{reply.content}</p>
+                      <p className="text-xs">{reply.content}</p>
                     </div>
                   </div>
                 </div>
@@ -157,44 +173,49 @@ const CommentSection = ({ comments, postId, currentUserId, onUpdate }: CommentSe
           )}
 
           {replyTo === comment.id && (
-            <div className="mr-8 flex gap-2">
-              <Textarea
-                placeholder="اكتب رداً..."
+            <div className="mr-10 flex gap-2 items-center">
+              <Avatar className="h-7 w-7">
+                <AvatarFallback className="bg-primary/10 text-primary text-xs">أنت</AvatarFallback>
+              </Avatar>
+              <input
+                type="text"
                 value={replyContent}
                 onChange={(e) => setReplyContent(e.target.value)}
-                rows={2}
-                className="flex-1 text-sm"
+                placeholder="اكتب رداً..."
+                className="flex-1 px-4 py-2 rounded-full bg-muted text-sm border-none focus:outline-none focus:ring-2 focus:ring-primary/50"
+                onKeyPress={(e) => e.key === "Enter" && handleAddReply(comment.id)}
               />
-              <div className="flex flex-col gap-1">
-                <Button 
-                  onClick={() => handleAddReply(comment.id)} 
-                  disabled={loading}
-                  size="sm"
-                >
-                  رد
-                </Button>
-                <Button 
-                  onClick={() => setReplyTo(null)} 
-                  variant="outline"
-                  size="sm"
-                >
-                  إلغاء
-                </Button>
-              </div>
+              <Button
+                size="sm"
+                onClick={() => handleAddReply(comment.id)}
+                disabled={loading || !replyContent.trim()}
+                className="rounded-full"
+              >
+                إرسال
+              </Button>
             </div>
           )}
         </div>
       ))}
 
-      <div className="flex gap-2 pt-2">
-        <Textarea
-          placeholder="اكتب تعليقاً..."
+      <div className="flex gap-2 items-center pt-2">
+        <Avatar className="h-8 w-8">
+          <AvatarFallback className="bg-primary/10 text-primary text-xs">أنت</AvatarFallback>
+        </Avatar>
+        <input
+          type="text"
           value={newComment}
           onChange={(e) => setNewComment(e.target.value)}
-          rows={2}
-          className="flex-1"
+          placeholder="اكتب تعليقاً..."
+          className="flex-1 px-4 py-2 rounded-full bg-muted text-sm border-none focus:outline-none focus:ring-2 focus:ring-primary/50"
+          onKeyPress={(e) => e.key === "Enter" && handleAddComment()}
         />
-        <Button onClick={handleAddComment} disabled={loading}>
+        <Button
+          size="sm"
+          onClick={handleAddComment}
+          disabled={loading || !newComment.trim()}
+          className="rounded-full px-4"
+        >
           إرسال
         </Button>
       </div>

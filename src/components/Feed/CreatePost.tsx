@@ -60,35 +60,59 @@ const CreatePost = ({ onPostCreated, userId, userProfile }: CreatePostProps) => 
   };
 
   return (
-    <Card className="shadow-sm">
+    <Card className="overflow-hidden shadow-sm">
       <CardContent className="p-4">
-        <div className="flex gap-3 items-start mb-3">
+        <div className="flex gap-3 mb-4">
           <Avatar className="h-10 w-10">
             <AvatarImage src={userProfile?.avatar_url || ""} />
             <AvatarFallback className="bg-primary text-primary-foreground">
               {userProfile?.display_name?.[0] || "U"}
             </AvatarFallback>
           </Avatar>
-          <div className="flex-1">
-            <Textarea
-              placeholder="ما الذي تفكر فيه؟"
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              className="resize-none border-none focus-visible:ring-0 p-0 min-h-[60px]"
-            />
-          </div>
+          <button
+            onClick={() => document.getElementById("post-content")?.focus()}
+            className="flex-1 text-right px-4 py-2 rounded-full bg-muted hover:bg-muted/80 transition-colors text-muted-foreground"
+          >
+            بم تفكر؟
+          </button>
         </div>
 
-        <FileUpload onFileUploaded={setImageUrl} currentFile={imageUrl} />
+        <div className="space-y-3">
+          <Textarea
+            id="post-content"
+            placeholder="ما الذي تفكر فيه؟"
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            className="resize-none min-h-[80px]"
+          />
+
+          <FileUpload onFileUploaded={setImageUrl} currentFile={imageUrl} />
+        </div>
 
         <div className="flex items-center justify-between mt-4 pt-3 border-t">
-          <div className="text-sm text-muted-foreground">
-            {content.length > 0 && `${content.length} حرف`}
+          <div className="flex gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => document.getElementById("image-upload")?.click()}
+            >
+              <span className="text-green-500">📷</span>
+              <span className="mr-2 text-sm">صورة</span>
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => document.getElementById("video-upload")?.click()}
+            >
+              <span className="text-red-500">🎥</span>
+              <span className="mr-2 text-sm">فيديو</span>
+            </Button>
           </div>
           <Button 
             onClick={handleSubmit} 
             disabled={loading || (!content.trim() && !imageUrl)}
             size="sm"
+            className="px-6"
           >
             {loading ? "جاري النشر..." : "نشر"}
           </Button>

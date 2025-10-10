@@ -68,24 +68,26 @@ const PostCard = ({ post, currentUserId, onUpdate }: PostCardProps) => {
   };
 
   return (
-    <Card>
+    <Card className="overflow-hidden shadow-sm">
       <CardHeader className="pb-3">
         <div className="flex items-center gap-3">
           <Avatar 
-            className="cursor-pointer"
+            className="h-10 w-10 cursor-pointer"
             onClick={() => navigate(`/profile/${post.user_id}`)}
           >
             <AvatarImage src={post.profiles?.avatar_url || ""} />
-            <AvatarFallback>{post.profiles?.display_name?.[0] || "U"}</AvatarFallback>
+            <AvatarFallback className="bg-primary text-primary-foreground">
+              {post.profiles?.display_name?.[0] || "U"}
+            </AvatarFallback>
           </Avatar>
-          <div>
+          <div className="flex-1">
             <p 
               className="font-semibold cursor-pointer hover:underline"
               onClick={() => navigate(`/profile/${post.user_id}`)}
             >
               {post.profiles?.display_name}
             </p>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               {new Date(post.created_at).toLocaleDateString("ar-EG", {
                 year: 'numeric',
                 month: 'long',
@@ -97,44 +99,60 @@ const PostCard = ({ post, currentUserId, onUpdate }: PostCardProps) => {
           </div>
         </div>
       </CardHeader>
-      <CardContent>
-        <p className="mb-4 whitespace-pre-wrap">{post.content}</p>
-        {post.image_url && (
-          <img
-            src={post.image_url}
-            alt="Post"
-            className="w-full rounded-lg mb-4"
-          />
+      <CardContent className="pt-0 space-y-3">
+        {post.content && (
+          <p className="whitespace-pre-wrap text-sm leading-relaxed">{post.content}</p>
         )}
 
-        <div className="flex items-center gap-4 py-3 border-y">
+        {post.image_url && (
+          <div className="rounded-lg overflow-hidden -mx-6">
+            {post.image_url.includes("video") || post.image_url.includes(".mp4") ? (
+              <video src={post.image_url} controls className="w-full max-h-[500px] object-cover" />
+            ) : (
+              <img src={post.image_url} alt="Post media" className="w-full object-cover" />
+            )}
+          </div>
+        )}
+
+        <div className="flex items-center justify-between text-xs text-muted-foreground pt-2">
+          <span>{likesCount > 0 && `${likesCount} إعجاب`}</span>
+          <div className="flex gap-3">
+            {commentsCount > 0 && <span>{commentsCount} تعليق</span>}
+            {sharesCount > 0 && <span>{sharesCount} مشاركة</span>}
+          </div>
+        </div>
+
+        <div className="flex items-center justify-around border-y py-1">
           <Button
             variant="ghost"
             size="sm"
             onClick={handleLike}
-            className="flex-1"
+            disabled={loading}
+            className="flex-1 hover:bg-muted/50"
           >
-            <Heart className={`h-5 w-5 ml-2 ${isLiked ? "fill-red-500 text-red-500" : ""}`} />
-            {likesCount > 0 && likesCount}
+            <Heart className={`h-5 w-5 ml-2 ${isLiked ? "fill-red-500 text-red-500" : "text-muted-foreground"}`} />
+            <span className={isLiked ? "text-red-500 font-semibold" : "text-muted-foreground"}>
+              إعجاب
+            </span>
           </Button>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setShowComments(!showComments)}
-            className="flex-1"
+            className="flex-1 hover:bg-muted/50"
           >
-            <MessageCircle className="h-5 w-5 ml-2" />
-            {commentsCount > 0 && commentsCount}
+            <MessageCircle className="h-5 w-5 ml-2 text-muted-foreground" />
+            <span className="text-muted-foreground">تعليق</span>
           </Button>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="flex-1"
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={handleShare}
             disabled={loading}
+            className="flex-1 hover:bg-muted/50"
           >
-            <Share2 className="h-5 w-5 ml-2" />
-            {sharesCount > 0 && sharesCount}
+            <Share2 className="h-5 w-5 ml-2 text-muted-foreground" />
+            <span className="text-muted-foreground">مشاركة</span>
           </Button>
         </div>
 

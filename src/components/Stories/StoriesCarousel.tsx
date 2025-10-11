@@ -50,15 +50,32 @@ const StoriesCarousel = ({ currentUserId, onCreateStory }: StoriesCarouselProps)
           .select("user_id, display_name, avatar_url")
           .in("user_id", userIds);
 
+        // Fetch friendships to prioritize friends' stories
+        const { data: friendshipsData } = await supabase
+          .from("friendships")
+          .select("friend_id")
+          .eq("user_id", currentUserId)
+          .eq("status", "accepted");
+
+        const friendIds = friendshipsData?.map(f => f.friend_id) || [];
+
         const storiesWithProfiles = data.map(story => ({
           ...story,
           profiles: profilesData?.find(p => p.user_id === story.user_id) || {
             display_name: "مستخدم",
             avatar_url: undefined
-          }
+          },
+          isFriend: friendIds.includes(story.user_id)
         }));
 
-        setStories(storiesWithProfiles as Story[]);
+        // Sort: friends first, then others
+        const sortedStories = storiesWithProfiles.sort((a, b) => {
+          if (a.isFriend && !b.isFriend) return -1;
+          if (!a.isFriend && b.isFriend) return 1;
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        });
+
+        setStories(sortedStories as Story[]);
       } else {
         setStories([]);
       }

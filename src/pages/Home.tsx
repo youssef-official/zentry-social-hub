@@ -6,6 +6,8 @@ import TopNav from "@/components/Layout/TopNav";
 import BottomNav from "@/components/Layout/BottomNav";
 import CreatePost from "@/components/Feed/CreatePost";
 import PostCard from "@/components/Feed/PostCard";
+import StoriesCarousel from "@/components/Stories/StoriesCarousel";
+import CreateStoryDialog from "@/components/Stories/CreateStoryDialog";
 import { useToast } from "@/hooks/use-toast";
 
 interface Post {
@@ -27,6 +29,7 @@ const Home = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [posts, setPosts] = useState<Post[]>([]);
+  const [showCreateStory, setShowCreateStory] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -136,6 +139,11 @@ const Home = () => {
     <div className="min-h-screen bg-muted pb-20">
       <TopNav />
       
+      <StoriesCarousel 
+        currentUserId={user?.id || ""}
+        onCreateStory={() => setShowCreateStory(true)}
+      />
+      
       <main className="max-w-2xl mx-auto p-4">
         <CreatePost 
           onPostCreated={fetchPosts} 
@@ -154,6 +162,13 @@ const Home = () => {
           ))}
         </div>
       </main>
+
+      <CreateStoryDialog
+        open={showCreateStory}
+        onOpenChange={setShowCreateStory}
+        onSuccess={fetchPosts}
+        userId={user?.id || ""}
+      />
 
       <BottomNav />
     </div>

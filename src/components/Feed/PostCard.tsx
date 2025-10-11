@@ -2,11 +2,12 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Heart, MessageCircle, Share2 } from "lucide-react";
+import { Heart, MessageCircle, Share2, CheckCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import CommentSection from "./CommentSection";
+import VideoPlayer from "./VideoPlayer";
 
 interface PostCardProps {
   post: any;
@@ -81,12 +82,17 @@ const PostCard = ({ post, currentUserId, onUpdate }: PostCardProps) => {
             </AvatarFallback>
           </Avatar>
           <div className="flex-1">
-            <p 
-              className="font-semibold cursor-pointer hover:underline"
-              onClick={() => navigate(`/profile/${post.user_id}`)}
-            >
-              {post.profiles?.display_name}
-            </p>
+            <div className="flex items-center gap-1">
+              <p 
+                className="font-semibold cursor-pointer hover:underline"
+                onClick={() => navigate(`/profile/${post.user_id}`)}
+              >
+                {post.profiles?.display_name}
+              </p>
+              {post.profiles?.is_verified && (
+                <CheckCircle className="h-4 w-4 text-primary fill-primary" />
+              )}
+            </div>
             <p className="text-xs text-muted-foreground">
               {new Date(post.created_at).toLocaleDateString("ar-EG", {
                 year: 'numeric',
@@ -107,7 +113,7 @@ const PostCard = ({ post, currentUserId, onUpdate }: PostCardProps) => {
         {post.image_url && (
           <div className="rounded-lg overflow-hidden -mx-6">
             {post.image_url.includes("video") || post.image_url.includes(".mp4") ? (
-              <video src={post.image_url} controls className="w-full max-h-[500px] object-cover" />
+              <VideoPlayer src={post.image_url} />
             ) : (
               <img src={post.image_url} alt="Post media" className="w-full object-cover" />
             )}

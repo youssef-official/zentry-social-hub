@@ -2,12 +2,13 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Heart, MessageCircle, Share2, CheckCircle } from "lucide-react";
+import { Heart, MessageCircle, Share2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import CommentSection from "./CommentSection";
 import VideoPlayer from "./VideoPlayer";
+import VerificationBadge from "@/components/Profile/VerificationBadge";
 
 interface PostCardProps {
   post: any;
@@ -90,7 +91,7 @@ const PostCard = ({ post, currentUserId, onUpdate }: PostCardProps) => {
                 {post.profiles?.display_name}
               </p>
               {post.profiles?.is_verified && (
-                <CheckCircle className="h-4 w-4 text-primary fill-primary" />
+                <VerificationBadge isVerified={true} size={16} />
               )}
             </div>
             <p className="text-xs text-muted-foreground">

@@ -20,19 +20,19 @@ const CreateStoryDialog = ({ open, onOpenChange, onSuccess, userId }: CreateStor
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith("image/")) {
+    if (!file.type.startsWith("image/") && !file.type.startsWith("video/")) {
       toast({
         title: "خطأ",
-        description: "يرجى رفع صورة فقط",
+        description: "يرجى رفع صورة أو فيديو فقط",
         variant: "destructive",
       });
       return;
     }
 
-    if (file.size > 10 * 1024 * 1024) {
+    if (file.size > 50 * 1024 * 1024) {
       toast({
         title: "خطأ",
-        description: "حجم الصورة يجب أن يكون أقل من 10 ميجابايت",
+        description: "حجم الملف يجب أن يكون أقل من 50 ميجابايت",
         variant: "destructive",
       });
       return;
@@ -97,7 +97,7 @@ const CreateStoryDialog = ({ open, onOpenChange, onSuccess, userId }: CreateStor
           <div className="border-2 border-dashed border-border rounded-lg p-8 text-center">
             <Upload className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
             <p className="text-sm text-muted-foreground mb-4">
-              اختر صورة لقصتك
+              اختر صورة أو فيديو لقصتك
             </p>
             <Button
               onClick={() => document.getElementById("story-upload")?.click()}
@@ -116,7 +116,7 @@ const CreateStoryDialog = ({ open, onOpenChange, onSuccess, userId }: CreateStor
             <input
               id="story-upload"
               type="file"
-              accept="image/*"
+              accept="image/*,video/*"
               onChange={handleFileChange}
               className="hidden"
             />

@@ -6,6 +6,7 @@ import TopNav from "@/components/Layout/TopNav";
 import BottomNav from "@/components/Layout/BottomNav";
 import CreatePost from "@/components/Feed/CreatePost";
 import PostCard from "@/components/Feed/PostCard";
+import PostSkeleton from "@/components/Feed/PostSkeleton";
 import StoriesCarousel from "@/components/Stories/StoriesCarousel";
 import CreateStoryDialog from "@/components/Stories/CreateStoryDialog";
 import { useToast } from "@/hooks/use-toast";
@@ -152,14 +153,22 @@ const Home = () => {
         />
         
         <div className="space-y-4 mt-6">
-          {posts.map((post) => (
-            <PostCard 
-              key={post.id} 
-              post={post} 
-              currentUserId={user?.id || ""} 
-              onUpdate={fetchPosts}
-            />
-          ))}
+          {loading ? (
+            <>
+              <PostSkeleton />
+              <PostSkeleton />
+              <PostSkeleton />
+            </>
+          ) : (
+            posts.map((post) => (
+              <PostCard 
+                key={post.id} 
+                post={post} 
+                currentUserId={user?.id || ""} 
+                onUpdate={fetchPosts}
+              />
+            ))
+          )}
         </div>
       </main>
 

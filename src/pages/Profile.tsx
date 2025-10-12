@@ -13,6 +13,10 @@ import AvatarUpload from "@/components/Profile/AvatarUpload";
 import CoverUpload from "@/components/Profile/CoverUpload";
 import PostCard from "@/components/Feed/PostCard";
 import CreatePost from "@/components/Feed/CreatePost";
+import PostSkeleton from "@/components/Feed/PostSkeleton";
+import VerificationBadge from "@/components/Profile/VerificationBadge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { UserPlus, Briefcase, MapPin, Calendar } from "lucide-react";
 
 const Profile = () => {
   const { username } = useParams();
@@ -24,6 +28,8 @@ const Profile = () => {
   const [displayName, setDisplayName] = useState("");
   const [bio, setBio] = useState("");
   const [isOwnProfile, setIsOwnProfile] = useState(false);
+  const [isFriend, setIsFriend] = useState(false);
+  const [friendRequestSent, setFriendRequestSent] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -42,6 +48,22 @@ const Profile = () => {
       }
     });
   }, [navigate, username]);
+
+  const checkFriendship = async (currentUserId: string, profileUserId: string) => {
+    const { data } = await supabase
+      .from("friendships")
+      .select("*")
+      .or(`and(user_id.eq.${currentUserId},friend_id.eq.${profileUserId}),and(user_id.eq.${profileUserId},friend_id.eq.${currentUserId})`)
+      .maybeSingle();
+
+    if (data) {
+      if (data.status === "accepted") {
+        setIsFriend(true);
+      } else if (data.user_id === currentUserId) {
+        setFriendRequestSent(true);
+      }
+    }
+  };
 
   const fetchProfile = async (userId: string) => {
     try {
@@ -105,6 +127,11 @@ const Profile = () => {
         setDisplayName(data.display_name);
         setBio(data.bio || "");
         setIsOwnProfile(data.user_id === currentUserId);
+        
+        if (!isOwnProfile) {
+          await checkFriendship(currentUserId, data.user_id);
+        }
+        await fetchUserPosts(data.user_id);
       } else {
         throw new Error("لم يتم العثور على المستخدم");
       }
@@ -199,6 +226,35 @@ const Profile = () => {
     }
   };
 
+  const handleAddFriend = async () => {
+    try {
+      await supabase.from("friendships").insert({
+        user_id: user.id,
+        friend_id: profile.user_id,
+        status: "pending",
+      });
+
+      await (supabase as any).from("notifications").insert({
+        user_id: profile.user_id,
+        type: "friend_request",
+        title: "طلب صداقة جديد",
+        message: `${user.email} أرسل لك طلب صداقة`,
+      });
+
+      setFriendRequestSent(true);
+      toast({
+        title: "تم!",
+        description: "تم إرسال طلب الصداقة",
+      });
+    } catch (error: any) {
+      toast({
+        title: "خطأ",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -275,48 +331,113 @@ const Profile = () => {
               ) : (
                 <>
                   <div className="flex items-center justify-between mb-2">
-                    <h1 className="text-2xl font-bold">
-                      {profile?.display_name || "مستخدم جديد"}
-                    </h1>
-                    {isOwnProfile && (
+                    <div className="flex items-center gap-2">
+                      <h1 className="text-2xl font-bold">
+                        {profile?.display_name || "مستخدم جديد"}
+                      </h1>
+                      {profile?.is_verified && (
+                        <VerificationBadge isVerified={true} size={20} />
+                      )}
+                    </div>
+                    {isOwnProfile ? (
                       <Button size="sm" onClick={() => setEditing(true)}>
                         <Edit className="h-4 w-4 ml-2" />
                         تعديل
                       </Button>
+                    ) : (
+                      !isFriend && !friendRequestSent && (
+                        <Button size="sm" onClick={handleAddFriend}>
+                          <UserPlus className="h-4 w-4 ml-2" />
+                          إضافة صديق
+                        </Button>
+                      )
                     )}
                   </div>
                   <p className="text-muted-foreground mb-4">{profile?.bio || "لم يتم إضافة نبذة بعد"}</p>
+                  
+                  {/* Details Section */}
+                  <div className="border-t pt-4 mt-4">
+                    <h3 className="font-bold mb-3">Details</h3>
+                    <div className="space-y-2 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4" />
+                        <span>انضم {new Date(profile?.created_at).toLocaleDateString("ar-EG", { year: "numeric", month: "long" })}</span>
+                      </div>
+                    </div>
+                  </div>
                 </>
               )}
             </div>
           </CardContent>
         </Card>
 
-        {isOwnProfile && (
-          <CreatePost 
-            onPostCreated={() => fetchUserPosts(user.id)} 
-            userId={user.id}
-            userProfile={profile}
-          />
-        )}
+        <Tabs defaultValue="posts" className="w-full">
+          <TabsList className="w-full grid grid-cols-3">
+            <TabsTrigger value="posts">Posts</TabsTrigger>
+            <TabsTrigger value="photos">Photos</TabsTrigger>
+            <TabsTrigger value="reels">Reels</TabsTrigger>
+          </TabsList>
 
-        <div className="space-y-4">
-          <h2 className="text-xl font-bold px-2">المنشورات</h2>
-          {posts.length === 0 ? (
-            <Card className="p-8 text-center">
-              <p className="text-muted-foreground">لا توجد منشورات بعد</p>
-            </Card>
-          ) : (
-            posts.map((post) => (
-              <PostCard
-                key={post.id}
-                post={post}
-                currentUserId={user?.id}
-                onUpdate={() => fetchUserPosts(profile.user_id)}
+          <TabsContent value="posts" className="space-y-4 mt-4">
+            {isOwnProfile && (
+              <CreatePost 
+                onPostCreated={() => fetchUserPosts(user.id)} 
+                userId={user.id}
+                userProfile={profile}
               />
-            ))
-          )}
-        </div>
+            )}
+            {loading ? (
+              <>
+                <PostSkeleton />
+                <PostSkeleton />
+              </>
+            ) : posts.length === 0 ? (
+              <Card className="p-8 text-center">
+                <p className="text-muted-foreground">لا توجد منشورات بعد</p>
+              </Card>
+            ) : (
+              posts.map((post) => (
+                <PostCard
+                  key={post.id}
+                  post={post}
+                  currentUserId={user?.id}
+                  onUpdate={() => fetchUserPosts(profile.user_id)}
+                />
+              ))
+            )}
+          </TabsContent>
+
+          <TabsContent value="photos" className="mt-4">
+            <div className="grid grid-cols-3 gap-1">
+              {posts
+                .filter((post) => post.image_url && !post.image_url.includes("video"))
+                .map((post) => (
+                  <div key={post.id} className="aspect-square overflow-hidden">
+                    <img
+                      src={post.image_url}
+                      alt="Post"
+                      className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition"
+                    />
+                  </div>
+                ))}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="reels" className="mt-4">
+            <div className="grid grid-cols-3 gap-1">
+              {posts
+                .filter((post) => post.image_url && (post.image_url.includes("video") || post.image_url.includes(".mp4")))
+                .map((post) => (
+                  <div key={post.id} className="aspect-[9/16] overflow-hidden bg-black relative">
+                    <video
+                      src={post.image_url}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ))}
+            </div>
+          </TabsContent>
+        </Tabs>
       </main>
 
       <BottomNav />

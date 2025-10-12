@@ -10,6 +10,8 @@ import Reels from "./pages/Reels";
 import Friends from "./pages/Friends";
 import Messages from "./pages/Messages";
 import Chat from "./pages/Chat";
+import Admin from "./pages/Admin";
+import Notifications from "./pages/Notifications";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -29,6 +31,8 @@ const App = () => (
           <Route path="/friends" element={<Friends />} />
           <Route path="/messages" element={<Messages />} />
           <Route path="/chat/:userId" element={<Chat />} />
+          <Route path="/admin" element={<Admin />} />
+          <Route path="/notifications" element={<Notifications />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

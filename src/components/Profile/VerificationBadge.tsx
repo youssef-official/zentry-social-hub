@@ -1,4 +1,3 @@
-import { CheckCircle2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -6,6 +5,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useState } from "react";
+import verificationBadge from "@/assets/verification-badge.png";
 
 interface VerificationBadgeProps {
   isVerified: boolean;
@@ -19,8 +19,10 @@ const VerificationBadge = ({ isVerified, size = 16 }: VerificationBadgeProps) =>
 
   return (
     <>
-      <CheckCircle2
-        className="text-blue-500 cursor-pointer"
+      <img
+        src={verificationBadge}
+        alt="Verified"
+        className="cursor-pointer"
         style={{ width: size, height: size }}
         onClick={() => setShowDialog(true)}
       />
@@ -29,7 +31,7 @@ const VerificationBadge = ({ isVerified, size = 16 }: VerificationBadgeProps) =>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <CheckCircle2 className="h-5 w-5 text-blue-500" />
+              <img src={verificationBadge} alt="Verified" className="h-6 w-6" />
               شارة التوثيق
             </DialogTitle>
           </DialogHeader>

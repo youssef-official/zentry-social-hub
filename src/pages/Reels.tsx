@@ -113,8 +113,8 @@ const Reels = () => {
             const commentsCount = video.comments?.length || 0;
 
             return (
-              <div key={video.id} className="h-screen w-full snap-start relative">
-                <VideoPlayer src={video.image_url} />
+              <div key={video.id} className="h-screen w-full snap-start relative bg-black">
+                <VideoPlayer src={video.image_url} autoPlay muted loop />
                 
                 <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
                   <div className="flex items-start gap-3">
@@ -159,14 +159,27 @@ const Reels = () => {
                     <span className="text-white text-xs font-semibold">{likesCount}</span>
                   </button>
 
-                  <button className="flex flex-col items-center gap-1">
+                  <button 
+                    onClick={() => navigate(`/post/${video.id}`)}
+                    className="flex flex-col items-center gap-1"
+                  >
                     <div className="bg-white/20 backdrop-blur-sm rounded-full p-3">
                       <MessageCircle className="h-7 w-7 text-white" />
                     </div>
                     <span className="text-white text-xs font-semibold">{commentsCount}</span>
                   </button>
 
-                  <button className="flex flex-col items-center gap-1">
+                  <button 
+                    onClick={async () => {
+                      if (navigator.share) {
+                        await navigator.share({
+                          title: `فيديو من ${video.profiles?.display_name}`,
+                          url: `${window.location.origin}/post/${video.id}`,
+                        });
+                      }
+                    }}
+                    className="flex flex-col items-center gap-1"
+                  >
                     <div className="bg-white/20 backdrop-blur-sm rounded-full p-3">
                       <Share2 className="h-7 w-7 text-white" />
                     </div>

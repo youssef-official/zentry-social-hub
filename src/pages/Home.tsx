@@ -127,11 +127,14 @@ const Home = () => {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">جاري التحميل...</p>
-        </div>
+      <div className="min-h-screen bg-muted pb-20">
+        <TopNav />
+        <main className="max-w-2xl mx-auto p-4 space-y-4 mt-20">
+          <PostSkeleton />
+          <PostSkeleton />
+          <PostSkeleton />
+        </main>
+        <BottomNav />
       </div>
     );
   }
@@ -153,22 +156,14 @@ const Home = () => {
         />
         
         <div className="space-y-4 mt-6">
-          {loading ? (
-            <>
-              <PostSkeleton />
-              <PostSkeleton />
-              <PostSkeleton />
-            </>
-          ) : (
-            posts.map((post) => (
-              <PostCard 
-                key={post.id} 
-                post={post} 
-                currentUserId={user?.id || ""} 
-                onUpdate={fetchPosts}
-              />
-            ))
-          )}
+          {posts.map((post) => (
+            <PostCard 
+              key={post.id} 
+              post={post} 
+              currentUserId={user?.id || ""} 
+              onUpdate={fetchPosts}
+            />
+          ))}
         </div>
       </main>
 

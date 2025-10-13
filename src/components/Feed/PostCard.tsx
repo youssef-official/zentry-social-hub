@@ -49,23 +49,36 @@ const PostCard = ({ post, currentUserId, onUpdate }: PostCardProps) => {
   };
 
   const handleShare = async () => {
-    setLoading(true);
-    try {
-      // نسخ رابط المنشور
-      const postUrl = `${window.location.origin}/post/${post.id}`;
-      await navigator.clipboard.writeText(postUrl);
-
-      toast({
-        title: "تم!",
-        description: "تم نسخ رابط المنشور",
-      });
-    } catch (error: any) {
-      toast({
-        title: "تم!",
-        description: "تم مشاركة المنشور",
-      });
-    } finally {
-      setLoading(false);
+    const postUrl = `${window.location.origin}/post/${post.id}`;
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `منشور من ${post.profiles?.display_name}`,
+          text: post.content,
+          url: postUrl,
+        });
+        toast({
+          title: "تم!",
+          description: "تم مشاركة المنشور",
+        });
+      } catch (error) {
+        // User cancelled sharing
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(postUrl);
+        toast({
+          title: "تم النسخ!",
+          description: "تم نسخ رابط المنشور",
+        });
+      } catch (error) {
+        toast({
+          title: "خطأ",
+          description: "حدث خطأ أثناء نسخ الرابط",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -155,7 +168,6 @@ const PostCard = ({ post, currentUserId, onUpdate }: PostCardProps) => {
             variant="ghost"
             size="sm"
             onClick={handleShare}
-            disabled={loading}
             className="flex-1 hover:bg-muted/50"
           >
             <Share2 className="h-5 w-5 ml-2 text-muted-foreground" />

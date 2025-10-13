@@ -77,37 +77,16 @@ const CreatePost = ({ onPostCreated, userId, userProfile }: CreatePostProps) => 
           </button>
         </div>
 
-        <div className="space-y-3">
-          <Textarea
-            id="post-content"
-            placeholder="ما الذي تفكر فيه؟"
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            className="resize-none min-h-[80px]"
-          />
-
-          <FileUpload onFileUploaded={setImageUrl} currentFile={imageUrl} />
-        </div>
+        <Textarea
+          id="post-content"
+          placeholder="ما الذي تفكر فيه؟"
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          className="resize-none min-h-[80px]"
+        />
 
         <div className="flex items-center justify-between mt-4 pt-3 border-t">
-          <div className="flex gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => document.getElementById("image-upload")?.click()}
-            >
-              <span className="text-green-500">📷</span>
-              <span className="mr-2 text-sm">صورة</span>
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => document.getElementById("video-upload")?.click()}
-            >
-              <span className="text-red-500">🎥</span>
-              <span className="mr-2 text-sm">فيديو</span>
-            </Button>
-          </div>
+          <FileUpload onFileUploaded={setImageUrl} currentFile={imageUrl} />
           <Button 
             onClick={handleSubmit} 
             disabled={loading || (!content.trim() && !imageUrl)}

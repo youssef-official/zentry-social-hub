@@ -115,12 +115,24 @@ const Friends = () => {
             ) : (
               <div className="space-y-3">
                 {friends.map((friend) => (
-                  <div key={friend.id} className="flex items-center gap-3">
-                    <Avatar>
-                      <AvatarImage src={friend.profiles?.avatar_url} />
-                      <AvatarFallback>{friend.profiles?.display_name?.[0]}</AvatarFallback>
-                    </Avatar>
-                    <span className="font-semibold">{friend.profiles?.display_name}</span>
+                  <div key={friend.id} className="flex items-center justify-between">
+                    <div 
+                      className="flex items-center gap-3 cursor-pointer"
+                      onClick={() => navigate(`/profile/${friend.friend_id}`)}
+                    >
+                      <Avatar>
+                        <AvatarImage src={friend.profiles?.avatar_url} />
+                        <AvatarFallback>{friend.profiles?.display_name?.[0]}</AvatarFallback>
+                      </Avatar>
+                      <span className="font-semibold">{friend.profiles?.display_name}</span>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => navigate(`/chat/${friend.friend_id}`)}
+                    >
+                      مراسلة
+                    </Button>
                   </div>
                 ))}
               </div>

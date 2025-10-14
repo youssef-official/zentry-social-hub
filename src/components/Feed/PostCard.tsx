@@ -104,7 +104,7 @@ const PostCard = ({ post, currentUserId, onUpdate }: PostCardProps) => {
                 {post.profiles?.display_name}
               </p>
               {post.profiles?.is_verified && (
-                <VerificationBadge isVerified={true} size={16} />
+                <VerificationBadge isVerified={true} size={18} />
               )}
             </div>
             <p className="text-xs text-muted-foreground">
@@ -125,7 +125,11 @@ const PostCard = ({ post, currentUserId, onUpdate }: PostCardProps) => {
         )}
 
         {post.image_url && (
-          <div className="rounded-lg overflow-hidden -mx-6">
+          <div className="rounded-lg overflow-hidden -mx-6 cursor-pointer" onClick={() => {
+            if (post.image_url.includes("video") || post.image_url.includes(".mp4")) {
+              navigate('/reels');
+            }
+          }}>
             {post.image_url.includes("video") || post.image_url.includes(".mp4") ? (
               <VideoPlayer src={post.image_url} />
             ) : (
@@ -148,9 +152,9 @@ const PostCard = ({ post, currentUserId, onUpdate }: PostCardProps) => {
             size="sm"
             onClick={handleLike}
             disabled={loading}
-            className="flex-1 hover:bg-muted/50"
+            className="flex-1 hover:bg-muted/50 transition-all duration-300 active:scale-95"
           >
-            <Heart className={`h-5 w-5 ml-2 ${isLiked ? "fill-red-500 text-red-500" : "text-muted-foreground"}`} />
+            <Heart className={`h-5 w-5 ml-2 transition-all duration-300 ${isLiked ? "fill-red-500 text-red-500 animate-in zoom-in-50" : "text-muted-foreground"}`} />
             <span className={isLiked ? "text-red-500 font-semibold" : "text-muted-foreground"}>
               إعجاب
             </span>

@@ -95,18 +95,56 @@ const Profile = () => {
         .from("posts")
         .select(`
           *,
-          profiles:user_id (display_name, avatar_url),
-          likes (*),
+          likes (
+            id,
+            user_id
+          ),
           comments (
-            *,
-            profiles:user_id (display_name, avatar_url)
+            id,
+            content,
+            user_id,
+            created_at
           )
         `)
         .eq("user_id", userId)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setPosts(data || []);
+
+      // جلب معلومات الملفات الشخصية
+      const postsWithProfiles = await Promise.all(
+        (data || []).map(async (post) => {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("display_name, avatar_url, is_verified")
+            .eq("user_id", post.user_id)
+            .single();
+
+          // جلب معلومات الملفات الشخصية للمعلقين
+          const commentsWithProfiles = await Promise.all(
+            (post.comments || []).map(async (comment: any) => {
+              const { data: commentProfile } = await supabase
+                .from("profiles")
+                .select("display_name, avatar_url, is_verified")
+                .eq("user_id", comment.user_id)
+                .single();
+
+              return {
+                ...comment,
+                profiles: commentProfile
+              };
+            })
+          );
+
+          return {
+            ...post,
+            profiles: profile,
+            comments: commentsWithProfiles
+          };
+        })
+      );
+
+      setPosts(postsWithProfiles);
     } catch (error: any) {
       console.error(error);
     }

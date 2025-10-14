@@ -29,10 +29,10 @@ const CreateStoryDialog = ({ open, onOpenChange, onSuccess, userId }: CreateStor
       return;
     }
 
-    if (file.size > 50 * 1024 * 1024) {
+    if (file.size > 100 * 1024 * 1024) {
       toast({
         title: "خطأ",
-        description: "حجم الملف يجب أن يكون أقل من 50 ميجابايت",
+        description: "حجم الملف يجب أن يكون أقل من 100 ميجابايت",
         variant: "destructive",
       });
       return;
@@ -110,7 +110,7 @@ const CreateStoryDialog = ({ open, onOpenChange, onSuccess, userId }: CreateStor
                   جاري الرفع...
                 </>
               ) : (
-                "اختيار صورة"
+                "اختيار ملف"
               )}
             </Button>
             <input

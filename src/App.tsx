@@ -12,6 +12,7 @@ import Messages from "./pages/Messages";
 import Chat from "./pages/Chat";
 import Admin from "./pages/Admin";
 import Notifications from "./pages/Notifications";
+import Post from "./pages/Post";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -33,7 +34,7 @@ const App = () => (
           <Route path="/chat/:userId" element={<Chat />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/notifications" element={<Notifications />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route path="/post/:postId" element={<Post />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

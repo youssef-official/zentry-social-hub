@@ -20,6 +20,7 @@ interface Post {
   profiles: {
     display_name: string;
     avatar_url: string | null;
+    is_verified?: boolean;
   };
   likes: { id: string; user_id: string }[];
   comments: any[];
@@ -67,7 +68,7 @@ const Home = () => {
           postsData.map(async (post) => {
             const { data: profileData } = await supabase
               .from("profiles")
-              .select("display_name, avatar_url")
+              .select("display_name, avatar_url, is_verified")
               .eq("user_id", post.user_id)
               .single();
 
@@ -86,13 +87,13 @@ const Home = () => {
               (commentsData || []).map(async (comment) => {
                 const { data: commentProfile } = await supabase
                   .from("profiles")
-                  .select("display_name, avatar_url")
+                  .select("display_name, avatar_url, is_verified")
                   .eq("user_id", comment.user_id)
                   .single();
 
                 return {
                   ...comment,
-                  profiles: commentProfile || { display_name: "مستخدم", avatar_url: null },
+                  profiles: commentProfile || { display_name: "مستخدم", avatar_url: null, is_verified: false },
                   replies: [],
                 };
               })
@@ -100,7 +101,7 @@ const Home = () => {
 
             return {
               ...post,
-              profiles: profileData || { display_name: "مستخدم", avatar_url: null },
+              profiles: profileData || { display_name: "مستخدم", avatar_url: null, is_verified: false },
               likes: likesData || [],
               comments: commentsWithProfiles,
               shares: [],
@@ -108,7 +109,7 @@ const Home = () => {
           })
         );
 
-        setPosts(postsWithDetails);
+        setPosts(postsWithDetails as any);
       }
     } catch (error: any) {
       toast({

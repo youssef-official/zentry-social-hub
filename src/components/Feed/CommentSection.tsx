@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { MessageCircle } from "lucide-react";
+import VerificationBadge from "@/components/Profile/VerificationBadge";
 
 interface Comment {
   id: string;
@@ -15,6 +16,7 @@ interface Comment {
   profiles: {
     display_name: string;
     avatar_url: string | null;
+    is_verified?: boolean;
   };
   replies?: Reply[];
 }
@@ -26,6 +28,7 @@ interface Reply {
   profiles: {
     display_name: string;
     avatar_url: string | null;
+    is_verified?: boolean;
   };
 }
 
@@ -118,12 +121,17 @@ const CommentSection = ({ comments, postId, currentUserId, onUpdate }: CommentSe
             </Avatar>
             <div className="flex-1">
               <div className="bg-muted rounded-2xl px-3 py-2">
-                <p 
-                  className="font-semibold text-sm cursor-pointer hover:underline"
-                  onClick={() => navigate(`/profile/${comment.user_id}`)}
-                >
-                  {comment.profiles?.display_name}
-                </p>
+                <div className="flex items-center gap-1">
+                  <p 
+                    className="font-semibold text-sm cursor-pointer hover:underline"
+                    onClick={() => navigate(`/profile/${comment.user_id}`)}
+                  >
+                    {comment.profiles?.display_name}
+                  </p>
+                  {comment.profiles?.is_verified && (
+                    <VerificationBadge isVerified={true} size={14} />
+                  )}
+                </div>
                 <p className="text-sm leading-relaxed">{comment.content}</p>
               </div>
               <div className="flex gap-3 px-3 mt-1">

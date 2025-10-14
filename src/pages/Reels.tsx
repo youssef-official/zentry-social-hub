@@ -31,20 +31,12 @@ const Reels = () => {
         .from("posts")
         .select(`
           *,
-          profiles!posts_user_id_fkey (
-            display_name,
-            avatar_url,
-            is_verified
-          ),
           likes (
             id,
             user_id
           ),
           comments (
-            id,
-            content,
-            user_id,
-            created_at
+            id
           )
         `)
         .not("image_url", "is", null)
@@ -52,7 +44,24 @@ const Reels = () => {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setVideos(data || []);
+
+      // جلب معلومات المستخدمين
+      const postsWithProfiles = await Promise.all(
+        (data || []).map(async (post) => {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("display_name, avatar_url, is_verified")
+            .eq("user_id", post.user_id)
+            .single();
+
+          return {
+            ...post,
+            profiles: profile
+          };
+        })
+      );
+
+      setVideos(postsWithProfiles);
     } catch (error) {
       console.error("Error fetching videos:", error);
     } finally {
@@ -136,7 +145,7 @@ const Reels = () => {
                           {video.profiles?.display_name}
                         </p>
                         {video.profiles?.is_verified && (
-                          <VerificationBadge isVerified={true} size={14} />
+                          <VerificationBadge isVerified={true} size={18} />
                         )}
                       </div>
                       {video.content && (

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -13,6 +13,7 @@ const Reels = () => {
   const [videos, setVideos] = useState<any[]>([]);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -31,13 +32,8 @@ const Reels = () => {
         .from("posts")
         .select(`
           *,
-          likes (
-            id,
-            user_id
-          ),
-          comments (
-            id
-          )
+          likes ( id, user_id ),
+          comments ( id )
         `)
         .not("image_url", "is", null)
         .or("image_url.ilike.%video%,image_url.ilike.%.mp4")
@@ -45,7 +41,6 @@ const Reels = () => {
 
       if (error) throw error;
 
-      // جلب معلومات المستخدمين
       const postsWithProfiles = await Promise.all(
         (data || []).map(async (post) => {
           const { data: profile } = await supabase
@@ -54,10 +49,7 @@ const Reels = () => {
             .eq("user_id", post.user_id)
             .single();
 
-          return {
-            ...post,
-            profiles: profile
-          };
+          return { ...post, profiles: profile };
         })
       );
 
@@ -69,10 +61,24 @@ const Reels = () => {
     }
   };
 
+  // ⚡ لايك لحظي بدون ريفريش
   const handleLike = async (videoId: string) => {
-    const video = videos.find(v => v.id === videoId);
-    const isLiked = video?.likes?.some((like: any) => like.user_id === user?.id);
+    setVideos((prev) =>
+      prev.map((v) => {
+        if (v.id === videoId) {
+          const isLiked = v.likes?.some((like: any) => like.user_id === user?.id);
+          if (isLiked) {
+            return { ...v, likes: v.likes.filter((l: any) => l.user_id !== user?.id) };
+          } else {
+            return { ...v, likes: [...v.likes, { id: Date.now(), user_id: user?.id }] };
+          }
+        }
+        return v;
+      })
+    );
 
+    const video = videos.find((v) => v.id === videoId);
+    const isLiked = video?.likes?.some((like: any) => like.user_id === user?.id);
     try {
       if (isLiked) {
         const likeToDelete = video.likes.find((like: any) => like.user_id === user?.id);
@@ -83,7 +89,6 @@ const Reels = () => {
           user_id: user?.id,
         });
       }
-      fetchVideos();
     } catch (error: any) {
       toast({
         title: "خطأ",
@@ -107,7 +112,10 @@ const Reels = () => {
         <h1 className="text-white font-bold text-xl">Reels</h1>
       </div>
 
-      <main className="h-screen overflow-y-scroll snap-y snap-mandatory">
+      <main
+        ref={containerRef}
+        className="h-screen overflow-y-scroll snap-y snap-mandatory no-scrollbar"
+      >
         {videos.length === 0 ? (
           <div className="h-screen flex items-center justify-center text-white">
             <div className="text-center">
@@ -116,18 +124,30 @@ const Reels = () => {
             </div>
           </div>
         ) : (
-          videos.map((video) => {
+          videos.map((video, index) => {
             const isLiked = video.likes?.some((like: any) => like.user_id === user?.id);
             const likesCount = video.likes?.length || 0;
             const commentsCount = video.comments?.length || 0;
 
             return (
-              <div key={video.id} className="h-screen w-full snap-start relative bg-black">
-                <VideoPlayer src={video.image_url} autoPlay muted loop />
-                
+              <div
+                key={video.id}
+                className="h-screen w-full snap-start relative bg-black flex justify-center items-center"
+              >
+                {/* 🎥 مشغل الفيديو */}
+                <VideoPlayer
+                  src={video.image_url}
+                  autoPlay
+                  loop
+                  muted
+                  index={index}
+                  containerRef={containerRef}
+                />
+
+                {/* 👤 معلومات المستخدم */}
                 <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
                   <div className="flex items-start gap-3">
-                    <Avatar 
+                    <Avatar
                       className="h-10 w-10 cursor-pointer border-2 border-white"
                       onClick={() => navigate(`/profile/${video.user_id}`)}
                     >
@@ -138,7 +158,7 @@ const Reels = () => {
                     </Avatar>
                     <div className="flex-1">
                       <div className="flex items-center gap-1 mb-1">
-                        <p 
+                        <p
                           className="font-semibold text-white cursor-pointer"
                           onClick={() => navigate(`/profile/${video.user_id}`)}
                         >
@@ -155,30 +175,37 @@ const Reels = () => {
                   </div>
                 </div>
 
+                {/* ❤️ أزرار لايك وكومنت وشير */}
                 <div className="absolute right-4 bottom-24 flex flex-col gap-4">
                   <button
                     onClick={() => handleLike(video.id)}
                     className="flex flex-col items-center gap-1"
                   >
-                    <div className="bg-white/20 backdrop-blur-sm rounded-full p-3">
-                      <Heart 
-                        className={`h-7 w-7 ${isLiked ? "fill-red-500 text-red-500" : "text-white"}`}
+                    <div className="bg-white/10 hover:bg-white/20 transition rounded-full p-2">
+                      <Heart
+                        className={`h-6 w-6 ${
+                          isLiked ? "fill-red-500 text-red-500" : "text-white"
+                        }`}
                       />
                     </div>
-                    <span className="text-white text-xs font-semibold">{likesCount}</span>
+                    <span className="text-white text-xs font-semibold">
+                      {likesCount}
+                    </span>
                   </button>
 
-                  <button 
+                  <button
                     onClick={() => navigate(`/post/${video.id}`)}
                     className="flex flex-col items-center gap-1"
                   >
-                    <div className="bg-white/20 backdrop-blur-sm rounded-full p-3">
-                      <MessageCircle className="h-7 w-7 text-white" />
+                    <div className="bg-white/10 hover:bg-white/20 transition rounded-full p-2">
+                      <MessageCircle className="h-6 w-6 text-white" />
                     </div>
-                    <span className="text-white text-xs font-semibold">{commentsCount}</span>
+                    <span className="text-white text-xs font-semibold">
+                      {commentsCount}
+                    </span>
                   </button>
 
-                  <button 
+                  <button
                     onClick={async () => {
                       if (navigator.share) {
                         await navigator.share({
@@ -189,8 +216,8 @@ const Reels = () => {
                     }}
                     className="flex flex-col items-center gap-1"
                   >
-                    <div className="bg-white/20 backdrop-blur-sm rounded-full p-3">
-                      <Share2 className="h-7 w-7 text-white" />
+                    <div className="bg-white/10 hover:bg-white/20 transition rounded-full p-2">
+                      <Share2 className="h-6 w-6 text-white" />
                     </div>
                   </button>
                 </div>

@@ -124,7 +124,7 @@ const Auth = () => {
     <div className="min-h-screen flex items-center justify-center bg-muted p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-3xl font-bold text-primary">Zentry</CardTitle>
+          <CardTitle className="text-3xl font-bold text-primary">Cura Social</CardTitle>
           <CardDescription>منصة التواصل الاجتماعي الأحدث</CardDescription>
         </CardHeader>
         <CardContent>

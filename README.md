@@ -1,4 +1,4 @@
-# Welcome to your Lovable project
+# Cura Social
 
 ## Project info
 
